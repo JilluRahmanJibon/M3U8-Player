@@ -1,12 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import CategoryPage from "./CategoryPage";
+import M3U8Player from "./M3u8player";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
-const M3U8Player = () =>
-{
-    const [ playlist, setPlaylist ] = useState([]);
-    const [ currentStream, setCurrentStream ] = useState(null);
-
-    // Sample M3U8 data
-    const m3u8Data = `EXTM3U
+const m3u8Data = `EXTM3U
 #EXTINF:-1 group-title="BANGLADESHI SONGS" tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSNhiXAC8VnI235ywdhZd2_k7PeFNQ9AIpClw&usqp=CAU" , Lute Le Tu Shakib Khan (2024)
 https://vz-ce272881-d38.b-cdn.net/4a90d1fa-8cb5-4947-99c2-e9c67939538f/playlist.m3u8
 #EXTINF:-1 group-title="BANGLADESHI SONGS" tvg-logo="https://vz-ce272881-d38.b-cdn.net/48c66526-821d-44b1-b128-105b2eb2ae9b/thumbnail_7a9fee44.jpg" , Jisme Mein Tera Shakib Khan (2024)
@@ -5181,130 +5177,55 @@ http://xtv.ooo:8080/movie/boss7770035788/navid@47855098/312808.mkv
 #EXTINF:-1 group-title="BOLLYWOOD (2023-2024)" tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/6npQ0MxlmCqPPF8H5xK4yGt7ZLL.jpg" ,GHOOMER (2023)
 http://xtv.ooo:8080/movie/boss7770035788/navid@47855098/370048.mkv
 #EXTINF:-1 group-title="BOLLYWOOD (2023-2024)" tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/njUkW5MEWOBogouci5rfmF8TSDY.jpg" ,GHUSPAITHIYA (2024)
-http://xtv.ooo:8080/movie/boss7770035788/navid@47855098/380313.mkv
+http://xtv.ooo:8080/movie/boss7770035788/navid@47855098/380313.mkv`;
 
+const parseM3U8Data = data => {
+	const lines = data.split("\n");
+	let parsedData = {};
 
+	lines.forEach((line, index) => {
+		if (line.startsWith("#EXTINF:")) {
+			const infoParts = line.split(",");
+			const groupTitle = line.match(/group-title="([^"]+)"/)?.[1];
+			const tvgLogo = line.match(/tvg-logo="([^"]+)"/)?.[1];
+			const name = infoParts[1]?.trim();
+			const url = lines[index + 1]?.trim();
 
+			if (groupTitle && tvgLogo && url) {
+				if (!parsedData[groupTitle]) {
+					parsedData[groupTitle] = [];
+				}
 
- 
-Chat
+				parsedData[groupTitle].push({
+					name,
+					logo: tvgLogo,
+					url,
+				});
+			}
+		}
+	});
 
-New Conversation
-
-🤓 Explain a complex thing
-
-Explain Artificial Intelligence so that I can explain it to my six-year-old child.
-
-
-🧠 Get suggestions and create new ideas
-
-Please give me the best 10 travel ideas around the world
-
-
-💭 Translate, summarize, fix grammar and more…
-
-Translate "I love you" French
-
-
-GPT-4o Mini
-Hello, how can I help you today?
-GPT-4o Mini
-coin image
-10
-Upgrade
-
-
-
-1 tvg-name="Al Jazeera English HD" 
-
-
-
-
-Make a Review & Earn Credit ❤
-Chat
-Ask
-Search
-Write
-Image
-ChatPDF
-Vision
-Full Page
-Invite & Earn
-
-  `;
-
-    // Parse M3U8 Data
-    const parseM3U8 = (data) =>
-    {
-        const lines = data.trim().split('\n');
-        const playlist = [];
-        for (let i = 0;i < lines.length;i++)
-        {
-            if (lines[ i ].startsWith('#EXTINF'))
-            {
-                const metadata = lines[ i ];
-                const url = lines[ i + 1 ];
-                const groupTitleMatch = metadata.match(/group-title="([^"]+)"/);
-                const logoMatch = metadata.match(/tvg-logo="([^"]+)"/);
-                const titleMatch = metadata.split(',').pop();
-
-                playlist.push({
-                    groupTitle: groupTitleMatch ? groupTitleMatch[ 1 ] : null,
-                    logo: logoMatch ? logoMatch[ 1 ] : null,
-                    title: titleMatch || null,
-                    url: url.trim(),
-                });
-            }
-        }
-        return playlist;
-    };
-
-    useEffect(() =>
-    {
-        setPlaylist(parseM3U8(m3u8Data));
-    }, []);
-
-    // Handle click on media item to load the stream
-    const handleStreamClick = (url) =>
-    {
-        setCurrentStream(url);
-    };
-
-    return (
-        <div className="container mx-auto p-4">
-            <h1 className="text-3xl font-bold mb-4">M3U8 Playlist</h1>
-
-            {/* Video Player */}
-            <div className="mb-4">
-                <video
-                    id="videoPlayer"
-                    className="w-full h-64"
-                    controls
-                    autoPlay
-                    src={currentStream ? currentStream : ''}
-                >
-                    Your browser does not support the video tag.
-                </video>
-            </div>
-
-            {/* Playlist */}
-            <div className="space-y-4 grid grid-cols-4 gap-6">
-                {playlist.map((item, index) => (
-                    <div
-                        key={index}
-                        className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-200"
-                        onClick={() => handleStreamClick(item.url)}
-                    >
-                        <img src={item.logo} alt={item.title} className="w-16 h-16 object-cover mr-4" />
-                        <div>
-                            <p className="text-lg font-semibold">{item.title}</p>
-                            <p className="text-sm text-gray-500">{item.groupTitle}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+	return parsedData;
 };
 
-export default M3U8Player;
+const App = () => {
+	const parsedData = parseM3U8Data(m3u8Data);
+
+	return (
+		<Router>
+			<Routes>
+				<Route path="/" element={<M3U8Player parsedData={parsedData} />} />
+				<Route
+					path="/category/:categoryName"
+					element={<CategoryPage parsedData={parsedData} />}
+				/>
+				<Route
+					path="/category/:categoryName"
+					element={<CategoryPage parsedData={parsedData} />}
+				/>
+			</Routes>
+		</Router>
+	);
+};
+
+export default App;
